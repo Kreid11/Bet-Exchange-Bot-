@@ -1,0 +1,197 @@
+{
+  "name": "Tennis Arbitrage",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "items[0].json.prevTime = Date.now();\nreturn items;"
+      },
+      "name": "Init FanDuel Timer",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api.the-odds-api.com/v4/sports/tennis/odds",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": []
+        },
+        "responseFormat": "json"
+      },
+      "name": "Get FanDuel Odds",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [600, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "const now = Date.now();\nconst prev = items[0].json.prevTime;\nitems[0].json.fanduelLatencyMs = now - prev;\nreturn items;"
+      },
+      "name": "Calc FanDuel Latency",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [800, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "items[0].json.prevTime = Date.now();\nreturn items;"
+      },
+      "name": "Init DraftKings Timer",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.the-odds-api.com/v4/sports/tennis/odds",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": []
+        },
+        "responseFormat": "json"
+      },
+      "name": "Get DraftKings Odds",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "const now = Date.now();\nconst prev = items[0].json.prevTime;\nitems[0].json.draftkingsLatencyMs = now - prev;\nreturn items;"
+      },
+      "name": "Calc DraftKings Latency",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "// simple example of arbitrage calc\nconst fd = items[0].json.fanduelOdds;\nconst dk = items[0].json.draftkingsOdds;\nitems[0].json.arbitrage = 100 * (1 - (1/fd + 1/dk));\nreturn items;"
+      },
+      "name": "Calculate Arbitrage",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$env.TELEGRAM_CHAT_ID}}",
+        "text": "=FanDuel odds: {{$json.fanduelOdds}}\nDraftKings odds: {{$json.draftkingsOdds}}\nArb: {{$json.arbitrage}}\nFanDuel latency: {{$json.fanduelLatencyMs}} ms\nDraftKings latency: {{$json.draftkingsLatencyMs}} ms",
+        "otherOptions": {},
+        "additionalFields": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "telegramApi"
+      },
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "credentials": {
+        "telegramApi": {
+          "token": "={{$env.TELEGRAM_TOKEN}}"
+        }
+      },
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Init FanDuel Timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init FanDuel Timer": {
+      "main": [
+        [
+          {
+            "node": "Get FanDuel Odds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get FanDuel Odds": {
+      "main": [
+        [
+          {
+            "node": "Calc FanDuel Latency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calc FanDuel Latency": {
+      "main": [
+        [
+          {
+            "node": "Init DraftKings Timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init DraftKings Timer": {
+      "main": [
+        [
+          {
+            "node": "Get DraftKings Odds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get DraftKings Odds": {
+      "main": [
+        [
+          {
+            "node": "Calc DraftKings Latency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calc DraftKings Latency": {
+      "main": [
+        [
+          {
+            "node": "Calculate Arbitrage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Arbitrage": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": 1
+}
