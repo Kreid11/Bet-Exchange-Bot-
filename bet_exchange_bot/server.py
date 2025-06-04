@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import FastAPI
 
-from .ingestion import OddsIngestor, RundownIngestor
+from .ingestion import SportsGameOddsIngestor
 from .normalization import normalize_odds
 from .arbitrage import scan_two_way_arbitrage
 
@@ -18,12 +18,9 @@ async def startup() -> None:
     # Example background task to fetch odds and search for an arbitrage
     async def worker() -> None:
         odds_data = []
-        ingestor1 = OddsIngestor(api_key="YOUR_API_KEY")
-        ingestor2 = RundownIngestor(api_key="YOUR_RUNDOWN_KEY")
-        raw1 = await ingestor1.fetch()
-        raw2 = await ingestor2.fetch()
-        odds_data.extend(normalize_odds(raw1))
-        odds_data.extend(normalize_odds(raw2))
+        ingestor = SportsGameOddsIngestor(api_key="YOUR_API_KEY")
+        raw = await ingestor.fetch_sports()
+        odds_data.extend(normalize_odds(raw))
 
         arbs = scan_two_way_arbitrage(odds_data)
         for arb in arbs:
